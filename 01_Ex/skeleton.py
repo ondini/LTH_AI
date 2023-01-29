@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import sys
 from gym_connect_four import ConnectFourEnv
+from player import MyPlayer
 
 env: ConnectFourEnv = gym.make("ConnectFour-v0")
 
@@ -47,7 +48,7 @@ It returns a move 0-6 or -1 if it could not make a move.
 To check your code for better performance, change this code to
 use your own algorithm for selecting actions too
 """
-def opponents_move(env):
+def opponents_move(env, board):
    env.change_player() # change to oppoent
    avmoves = env.available_moves()
    if not avmoves:
@@ -57,6 +58,8 @@ def opponents_move(env):
    # TODO: Optional? change this to select actions with your policy too
    # that way you get way more interesting games, and you can see if starting
    # is enough to guarrantee a win
+   #player = MyPlayer(-1, 1, (6,7))
+   #action = player.move(board)
    action = random.choice(list(avmoves))
 
    state, reward, done, _ = env.step(action)
@@ -66,14 +69,18 @@ def opponents_move(env):
    env.change_player() # change back to student before returning
    return state, reward, done
 
-def student_move():
+def student_move(board):
    """
    TODO: Implement your min-max alpha-beta pruning algorithm here.
    Give it whatever input arguments you think are necessary
    (and change where it is called).
    The function should return a move from 0-6
    """
-   return random.choice([0, 1, 2, 3, 4, 5, 6])
+   player = MyPlayer(1, -1, (6,7))
+   move = player.move(board)
+   return move
+
+
 
 def play_game(vs_server = False):
    """
@@ -119,7 +126,7 @@ def play_game(vs_server = False):
    done = False
    while not done:
       # Select your move
-      stmove = student_move() # TODO: change input here
+      stmove = student_move(state) # TODO: change input here
 
       # make both student and bot/server moves
       if vs_server:
@@ -136,7 +143,7 @@ def play_game(vs_server = False):
             # Execute your move
             avmoves = env.available_moves()
             if stmove not in avmoves:
-               print("You tied to make an illegal move! You have lost the game.")
+               print("You tried to make an illegal move! You have lost the game.")
                break
             state, result, done, _ = env.step(stmove)
 
@@ -146,7 +153,7 @@ def play_game(vs_server = False):
 
          # select and make a move for the opponent, returned reward from students view
          if not done:
-            state, result, done = opponents_move(env)
+            state, result, done = opponents_move(env, state)
 
       # Check if the game is over
       if result != 0:
@@ -165,12 +172,13 @@ def play_game(vs_server = False):
             print("Unexpected result result={}".format(result))
          if not vs_server:
             print("Final state (1 are student discs, -1 are servers, 0 is empty): ")
-      else:
-         print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
+      # else:
+      #    print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
 
       # Print current gamestate
-      print(state)
-      print()
+      # print(state)
+      #print()
+   return result == 1
 
 def main():
    # Parse command line arguments
@@ -187,7 +195,12 @@ def main():
       sys.exit(1)
 
    if args.local:
-      play_game(vs_server = False)
+      G=100
+      c = 0 
+      for i in range(G):
+         r = play_game(vs_server = False)
+         c+=r
+      print(f"You won {c/G*100:.2f}% of the games")
    elif args.online:
       play_game(vs_server = True)
 
