@@ -58,7 +58,7 @@ def opponents_move(env, board):
    # TODO: Optional? change this to select actions with your policy too
    # that way you get way more interesting games, and you can see if starting
    # is enough to guarrantee a win
-   player = ABPlayer(-1, 1, (6,7), k=2)
+   player = ABPlayer(-1, 1, (6,7))
    action = player.move(board)
    #action = random.choice(list(avmoves))
 
