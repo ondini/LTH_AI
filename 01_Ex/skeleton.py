@@ -5,14 +5,14 @@ import numpy as np
 import argparse
 import sys
 from gym_connect_four import ConnectFourEnv
-from player import MyPlayer
+from player import ABPlayer
 
 env: ConnectFourEnv = gym.make("ConnectFour-v0")
 
 #SERVER_ADRESS = "http://localhost:8000/"
 SERVER_ADRESS = "https://vilde.cs.lth.se/edap01-4inarow/"
 API_KEY = 'nyckel'
-STIL_ID = ["da20example-s1", "da22test-s2"] # TODO: fill this list with your stil-id's
+STIL_ID = ["on8453ka-s"] # TODO: fill this list with your stil-id's
 
 def call_server(move):
    res = requests.post(SERVER_ADRESS + "move",
@@ -58,9 +58,9 @@ def opponents_move(env, board):
    # TODO: Optional? change this to select actions with your policy too
    # that way you get way more interesting games, and you can see if starting
    # is enough to guarrantee a win
-   #player = MyPlayer(-1, 1, (6,7))
-   #action = player.move(board)
-   action = random.choice(list(avmoves))
+   player = ABPlayer(-1, 1, (6,7), k=2)
+   action = player.move(board)
+   #action = random.choice(list(avmoves))
 
    state, reward, done, _ = env.step(action)
    if done:
@@ -76,7 +76,7 @@ def student_move(board):
    (and change where it is called).
    The function should return a move from 0-6
    """
-   player = MyPlayer(1, -1, (6,7))
+   player = ABPlayer(1, -1, (6,7))
    move = player.move(board)
    return move
 
@@ -119,9 +119,9 @@ def play_game(vs_server = False):
          print()
 
    # Print current gamestate
-   print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
-   print(state)
-   print()
+   #print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
+   #print(state)
+   #print()
 
    done = False
    while not done:
@@ -132,7 +132,7 @@ def play_game(vs_server = False):
       if vs_server:
          # Send your move to server and get response
          res = call_server(stmove)
-         print(res.json()['msg'])
+         #print(res.json()['msg'])
 
          # Extract response values
          result = res.json()['result']
@@ -202,7 +202,12 @@ def main():
          c+=r
       print(f"You won {c/G*100:.2f}% of the games")
    elif args.online:
-      play_game(vs_server = True)
+      G=20
+      c = 0 
+      for i in range(G):
+         r = play_game(vs_server = True)
+         c+=r
+      print(f"You won {c/G*100:.2f}% of the games")
 
    if args.stats:
       stats = check_stats()

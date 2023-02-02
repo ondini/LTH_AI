@@ -1,5 +1,6 @@
 import copy
 import time
+import numpy as np
 
 MAXTIME = 4.7 #time limit in seconds
 
@@ -119,16 +120,16 @@ class ABPlayer():
         self.depth -= 1
         return node_value
 
-    def get_score(self, state):
+    def get_score(self, board):
         ''' 
         Return heuristically computed score of given board.
         '''
-        my_fours = self.checkForStreak(state, self.my_color, 4)
-        my_threes = self.checkForStreak(state, self.my_color, 3)
-        my_twos = self.checkForStreak(state, self.my_color, 2)
-        opponent_fours = self.checkForStreak(state, self.opponent_color, 4)
-        opponent_threes = self.checkForStreak(state, self.opponent_color, 3)
-        opponent_twos = self.checkForStreak(state, self.opponent_color, 2)
+        my_fours = self.checkForStreak(board, self.my_color, 4)
+        my_threes = self.checkForStreak(board, self.my_color, 3)
+        my_twos = self.checkForStreak(board, self.my_color, 2)
+        opponent_fours = self.checkForStreak(board, self.opponent_color, 4)
+        opponent_threes = self.checkForStreak(board, self.opponent_color, 3)
+        opponent_twos = self.checkForStreak(board, self.opponent_color, 2)
 
         #print(self.ka)
         if self.ka == 0:
@@ -164,64 +165,30 @@ class ABPlayer():
                 break;
 
 
-    def checkForStreak(self, state, color, streak):
+    def find_connected(self, board, color, length):
         count = 0
-        for i in range(6):
-            for j in range(7):
+        directions = [(1,1), (1,-1),(1,0),(0,1)]
+        explored = np.zeros([4, *self.board_size])
+        print(explored.shape)
+        for i in range(self.board_size[0]):
+            for j in range(self.board_size[0]):
                 if state[i][j] == color:
-                    count += self.verticalStreak(i, j, state, streak)
-                    count += self.horizontalStreak(i, j, state, streak)
-                    count += self.diagonalCheck(i, j, state, streak)
-        return count
+                    for direction in range(4):
+                        for k in range(1, length):
+                            if (i + k * directions[direction][0] >= 0 and i + k * directions[direction][0] < self.board_size[0] and j + k * directions[direction][1] >= 0 and j + k * directions[direction][1] < self.board_size[1]):
+                                if (state[i + k * directions[direction][0]][j + k * directions[direction][1]] == color and explored[direction][i + k * directions[direction][0]][j + k * directions[direction][1]] == 0):
+                                    explored[direction][i + k * directions[direction][0]][j + k * directions[direction][1]] = 1
+                                else:
+                                    break
+                            else:
+                                break
+                        consecutiveCount = 0
+                        for i in range(row, 6):
+                            if state[i, column] == state[row, column]:
+                                consecutiveCount += 1
+                        
+                        count += self.verticalStreak(i, j, state, streak)
+                        count += self.horizontalStreak(i, j, state, streak)
+                        count += self.diagonalCheck(i, j, state, streak)
+        return 0
 
-    def verticalStreak(self, row, column, state, streak):
-        consecutiveCount = 0
-        for i in range(row, 6):
-            if state[i, column] == state[row, column]:
-                consecutiveCount += 1
-            else:
-                break
-        if consecutiveCount >= streak:
-            return 1
-        else:
-            return 0
-
-    def horizontalStreak(self, row, column, state, streak):
-        count = 0
-        for j in range(column, 7):
-            if state[row, j] == state[row, column]:
-                count += 1
-            else:
-                break
-        if count >= streak:
-            return 1
-        else:
-            return 0
-
-    def diagonalCheck(self, row, column, state, streak):
-        total = 0
-        count = 0
-        j = column
-        for i in range(row, 6):
-            if j > 6:
-                break
-            elif state[i, j] == state[row, column]:
-                count += 1
-            else:
-                break
-            j += 1
-        if count >= streak:
-            total += 1
-        count = 0
-        j = column
-        for i in range(row, -1, -1):
-            if j > 6:
-                break
-            elif state[i,j] == state[row, column]:
-                count += 1
-            else:
-                break
-            j += 1
-        if count >= streak:
-            total += 1
-        return total
