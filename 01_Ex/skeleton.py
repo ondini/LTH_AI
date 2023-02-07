@@ -12,7 +12,7 @@ env: ConnectFourEnv = gym.make("ConnectFour-v0")
 
 SERVER_ADDRESS = "https://vilde.cs.lth.se/edap01-4inarow/"
 API_KEY = 'nyckel'
-STIL_ID = ["da20example-s1", "da22test-s2"] # TODO: fill this list with your stil-id's
+STIL_ID = ["on8453ka-s"] # TODO: fill this list with your stil-id's
 
 def call_server(move):
    res = requests.post(SERVER_ADDRESS + "move",

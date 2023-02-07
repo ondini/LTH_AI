@@ -2,7 +2,7 @@ import copy
 import time
 import numpy as np
 
-MAXTIME = 400000.7 #time limit in seconds
+MAXTIME = 4.7 #time limit in seconds
 
 class ABPlayer():
     '''alpha-beta pruning game player'''
