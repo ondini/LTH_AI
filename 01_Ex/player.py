@@ -14,9 +14,9 @@ class ABPlayer():
         self.streak_length = streak_length
         # a-b pruning attributes
         self.it_deep = it_deep
+        self.in_depth = depth
         self.depth = 0                # holds current depth in search tree
         self.maxdepth = self.in_depth # holds max depth in search tree from iterative deepening
-    
     def reset_atts(self):
         self.depth = 0
         self.maxdepth = self.in_depth
