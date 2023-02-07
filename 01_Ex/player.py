@@ -2,7 +2,7 @@ import copy
 import time
 import numpy as np
 
-MAXTIME = 4.7 #time limit in seconds
+MAXTIME = 400000.7 #time limit in seconds
 
 class ABPlayer():
     '''alpha-beta pruning game player'''
@@ -14,23 +14,23 @@ class ABPlayer():
         self.streak_length = streak_length
         # a-b pruning attributes
         self.it_deep = it_deep
-        self.in_depth = depth
-        self.depth = 0 # holds current depth in search tree
+        self.depth = 0                # holds current depth in search tree
         self.maxdepth = self.in_depth # holds max depth in search tree from iterative deepening
+    
     def reset_atts(self):
         self.depth = 0
         self.maxdepth = self.in_depth
 
     def move(self,board):
         self.time = time.time() # starting time
-        a = -float('Inf')       # alpha
-        b =  float('Inf')       # beta
+        a = -float('Inf') # alpha
+        b =  float('Inf') # beta
         
         maxsearched = None # best move found so far in ITD
         itd = True
         while itd:
             self.maxdepth += 1
-            best_next = (-float('Inf'),(0,0))   #(best_successor_value, best_successor) # best successor found so far in current ITD round
+            best_next = (-float('Inf'),(0,0)) #(best_successor_value, best_successor) # best successor found so far in current ITD round
 
             for move in self.get_all_valid_moves(board, self.my_color):
                 board_changed = self.get_board_copy(board)
@@ -59,7 +59,7 @@ class ABPlayer():
         if (time.time() - self.time) > MAXTIME: #max time reached
             return -float('Inf')                               
     
-        self.depth += 1  #proceeded to next layer        
+        self.depth += 1  # proceeded to next layer        
         moves = self.get_all_valid_moves(board,self.opponent_color)
         
         score = self.get_score(board)
@@ -81,9 +81,9 @@ class ABPlayer():
             node_value = min(node_value, returned_value)
             if node_value <= a:  
                 self.depth -= 1
-                return node_value  #no need to check other successors
+                return node_value # no need to check other successors
             b = min(b, node_value)
-        self.depth -= 1  #exitting this layer
+        self.depth -= 1 # exitting this layer
         return node_value
         
     def maxvalue(self, board, a, b):
@@ -91,10 +91,10 @@ class ABPlayer():
         Maxpart of alpha-beta pruning.
         Returns the highest-valued successor.
         '''
-        if (time.time() - self.time) > MAXTIME: #max time reached
+        if (time.time() - self.time) > MAXTIME: # max time reached
             return -float('Inf')
             
-        self.depth += 1 #proceeded to next layer        
+        self.depth += 1 # proceeded to next layer        
         moves = self.get_all_valid_moves(board, self.my_color)
         score = self.get_score(board)
         if (moves == []) or (self.depth == self.maxdepth) or (abs(score) > 1000): #terminal or max depth reached
@@ -122,7 +122,7 @@ class ABPlayer():
 
     def get_score(self, state):
         ''' 
-        Return heuristically computed score of given board.
+        Return heuristically computed evaluation of given board.
         '''
         player_results = self.find_connected(state, self.my_color)
         opponent_results = self.find_connected(state, self.opponent_color)
