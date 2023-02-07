@@ -5,17 +5,17 @@ import numpy as np
 import argparse
 import sys
 from gym_connect_four import ConnectFourEnv
+
 from player import ABPlayer
 
 env: ConnectFourEnv = gym.make("ConnectFour-v0")
 
-#SERVER_ADRESS = "http://localhost:8000/"
-SERVER_ADRESS = "https://vilde.cs.lth.se/edap01-4inarow/"
+SERVER_ADDRESS = "https://vilde.cs.lth.se/edap01-4inarow/"
 API_KEY = 'nyckel'
-STIL_ID = ["on8453ka-s"] # TODO: fill this list with your stil-id's
+STIL_ID = ["da20example-s1", "da22test-s2"] # TODO: fill this list with your stil-id's
 
 def call_server(move):
-   res = requests.post(SERVER_ADRESS + "move",
+   res = requests.post(SERVER_ADDRESS + "move",
                        data={
                            "stil_id": STIL_ID,
                            "move": move, # -1 signals the system to start a new game. any running game is counted as a loss
@@ -32,7 +32,7 @@ def call_server(move):
    return res
 
 def check_stats():
-   res = requests.post(SERVER_ADRESS + "stats",
+   res = requests.post(SERVER_ADDRESS + "stats",
                        data={
                            "stil_id": STIL_ID,
                            "api_key": API_KEY,
@@ -58,7 +58,7 @@ def opponents_move(env, board):
    # TODO: Optional? change this to select actions with your policy too
    # that way you get way more interesting games, and you can see if starting
    # is enough to guarrantee a win
-   player = ABPlayer(-1, 1, (6,7), k=2)
+   player = ABPlayer(-1, 1)
    action = player.move(board)
    #action = random.choice(list(avmoves))
 
@@ -76,13 +76,11 @@ def student_move(board):
    (and change where it is called).
    The function should return a move from 0-6
    """
-   player = ABPlayer(1, -1, (6,7))
+   player = ABPlayer(1, -1)
    move = player.move(board)
    return move
 
-
-
-def play_game(vs_server = False):
+def play_game(vs_server = False, student_starts = True):
    """
    The reward for a game is as follows. You get a
    botaction = random.choice(list(avmoves)) reward from the
@@ -106,11 +104,13 @@ def play_game(vs_server = False):
       print(res.json()['msg'])
       botmove = res.json()['botmove']
       state = np.array(res.json()['state'])
+      # reset env to state from the server (if you want to use it to keep track)
+      env.reset(board=state)
    else:
       # reset game to starting state
       env.reset(board=None)
       # determine first player
-      student_gets_move = random.choice([True, False])
+      student_gets_move = student_starts#random.choice([True, False])
       if student_gets_move:
          print('You start!')
          print()
@@ -119,9 +119,9 @@ def play_game(vs_server = False):
          print()
 
    # Print current gamestate
-   #print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
-   #print(state)
-   #print()
+   # print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
+   # print(state)
+   # print()
 
    done = False
    while not done:
@@ -132,18 +132,20 @@ def play_game(vs_server = False):
       if vs_server:
          # Send your move to server and get response
          res = call_server(stmove)
-         #print(res.json()['msg'])
+         print(res.json()['msg'])
 
          # Extract response values
          result = res.json()['result']
          botmove = res.json()['botmove']
          state = np.array(res.json()['state'])
+         # reset env to state from the server (if you want to use it to keep track)
+         env.reset(board=state)
       else:
          if student_gets_move:
             # Execute your move
             avmoves = env.available_moves()
             if stmove not in avmoves:
-               print("You tried to make an illegal move! You have lost the game.")
+               print("You tied to make an illegal move! You have lost the game.")
                break
             state, result, done, _ = env.step(stmove)
 
@@ -172,12 +174,12 @@ def play_game(vs_server = False):
             print("Unexpected result result={}".format(result))
          if not vs_server:
             print("Final state (1 are student discs, -1 are servers, 0 is empty): ")
-      # else:
-      #    print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
+      #else:
+         #print("Current state (1 are student discs, -1 are servers, 0 is empty): ")
 
       # Print current gamestate
       # print(state)
-      #print()
+      # print()
    return result == 1
 
 def main():
@@ -194,13 +196,16 @@ def main():
       parser.print_help(sys.stderr)
       sys.exit(1)
 
+
    if args.local:
-      G=100
-      c = 0 
-      for i in range(G):
-         r = play_game(vs_server = False)
-         c+=r
-      print(f"You won {c/G*100:.2f}% of the games")
+      # G=10
+      # c = 0 
+      # for i in range(G):
+      #    r = play_game(vs_server = False)
+      #    c+=r
+      # print(f"You won {c/G*100:.2f}% of the games")
+      play_game(vs_server = False, student_starts=False)
+      play_game(vs_server = False)
    elif args.online:
       G=20
       c = 0 

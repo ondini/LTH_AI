@@ -1,31 +1,32 @@
 import copy
 import time
+import numpy as np
 
 MAXTIME = 4.7 #time limit in seconds
 
 class ABPlayer():
     '''alpha-beta pruning game player'''
-    def __init__(self, my_color, opponent_color, board_size, k=0, it_deep=False):
+    def __init__(self, my_color, opponent_color, board_size=(6,7), streak_length=4, depth=3, it_deep=False):
         # game attributes
         self.my_color = my_color
         self.opponent_color = opponent_color
         self.board_size = board_size
-        self.ka = k
+        self.streak_length = streak_length
         # a-b pruning attributes
         self.it_deep = it_deep
-        self.depth = 0               # holds current depth in search tree
-        self.maxdepth = 3           # holds max depth in search tree from iterative deepening
-    
+        self.in_depth = depth
+        self.depth = 0 # holds current depth in search tree
+        self.maxdepth = self.in_depth # holds max depth in search tree from iterative deepening
     def reset_atts(self):
         self.depth = 0
-        self.maxdepth = 3
+        self.maxdepth = self.in_depth
 
     def move(self,board):
         self.time = time.time() # starting time
         a = -float('Inf')       # alpha
         b =  float('Inf')       # beta
         
-        maxsearched = (0,0) # best move found so far in ITD
+        maxsearched = None # best move found so far in ITD
         itd = True
         while itd:
             self.maxdepth += 1
@@ -55,14 +56,14 @@ class ABPlayer():
         Min-part of alpha-beta pruning.
         Returns the lowest-valued successor.
         '''
-        if (time.time() - self.time) > MAXTIME:                                     #max time reached
+        if (time.time() - self.time) > MAXTIME: #max time reached
             return -float('Inf')                               
     
-        self.depth += 1                                                         #proceeded to next layer        
+        self.depth += 1  #proceeded to next layer        
         moves = self.get_all_valid_moves(board,self.opponent_color)
         
         score = self.get_score(board)
-        if (moves == None) or (self.depth == self.maxdepth) or (abs(score) > 1000):
+        if (moves == []) or (self.depth == self.maxdepth) or (abs(score) > 1000):
             self.depth -= 1
             return score
             
@@ -80,9 +81,9 @@ class ABPlayer():
             node_value = min(node_value, returned_value)
             if node_value <= a:  
                 self.depth -= 1
-                return node_value                                       #no need to check other successors
+                return node_value  #no need to check other successors
             b = min(b, node_value)
-        self.depth -= 1                                                 #exitting this layer
+        self.depth -= 1  #exitting this layer
         return node_value
         
     def maxvalue(self, board, a, b):
@@ -90,15 +91,15 @@ class ABPlayer():
         Maxpart of alpha-beta pruning.
         Returns the highest-valued successor.
         '''
-        if (time.time() - self.time) > MAXTIME:                         #max time reached
+        if (time.time() - self.time) > MAXTIME: #max time reached
             return -float('Inf')
             
-        self.depth += 1                                                 #proceeded to next layer        
+        self.depth += 1 #proceeded to next layer        
         moves = self.get_all_valid_moves(board, self.my_color)
-        
-        if (moves == None) or (self.depth == self.maxdepth):
+        score = self.get_score(board)
+        if (moves == []) or (self.depth == self.maxdepth) or (abs(score) > 1000): #terminal or max depth reached
             self.depth -= 1
-            return self.get_score(board)
+            return score
             
         node_value = -float('Inf')
         for move in moves:
@@ -123,27 +124,20 @@ class ABPlayer():
         ''' 
         Return heuristically computed score of given board.
         '''
-        my_fours = self.checkForStreak(state, self.my_color, 4)
-        my_threes = self.checkForStreak(state, self.my_color, 3)
-        my_twos = self.checkForStreak(state, self.my_color, 2)
-        opponent_fours = self.checkForStreak(state, self.opponent_color, 4)
-        opponent_threes = self.checkForStreak(state, self.opponent_color, 3)
-        opponent_twos = self.checkForStreak(state, self.opponent_color, 2)
+        player_results = self.find_connected(state, self.my_color)
+        opponent_results = self.find_connected(state, self.opponent_color)
 
-        #print(self.ka)
-        if self.ka == 0:
-            #print("returning")
-            return (my_fours * 1000 + my_threes * 50 + my_twos) - (opponent_threes * 50 + opponent_twos * 2) if opponent_fours == 0 else -1000
-        elif self.ka == 1:
-            #print("returning aa")
-            return (my_fours * 1000 + my_threes * 50 + my_twos) - (opponent_fours*-1000 * opponent_threes * 50 + opponent_twos)
-        elif self.ka == 2:
-            return 1000 if my_fours > 0 else ((my_threes * 50 + my_twos) - (opponent_threes * 50 + opponent_twos * 2) if opponent_fours == 0 else -1000)
-          
-               
+        p4 = player_results[:,2].sum() # player's four-in-a-row count
+        p3 = player_results[:,1].sum() # player's theree-in-a-row count
+        p2 = player_results[:,0].sum() # player's two-in-a-row count
+
+        o4 = opponent_results[:,2].sum() # opponent's four-in-a-row count
+        o3 = opponent_results[:,1].sum() # ...
+        o2 = opponent_results[:,0].sum()
+
+        return (p4 * 3000 + p3 * 100 + p2) - (o3 * 100 + o2 * 2) if o4 == 0 else -3000
 
     def get_all_valid_moves(self, board, players_color):
-
         valid_moves = []
         for col in range(self.board_size[1]):
             if board[0, col] == 0:
@@ -152,7 +146,6 @@ class ABPlayer():
         
     def get_opponent(self, players_color):
         return self.opponent_color if players_color == self.my_color else self.my_color
-    
 
     def get_board_copy(self, board):
         return copy.deepcopy(board)
@@ -163,65 +156,32 @@ class ABPlayer():
                 board[row-1, move] = players_color
                 break;
 
+    def find_connected(self, board, c):
+        ''' 
+            Returns 3x4 matrix of counts of streaks of length 2, 3 and 4 in each direction.
+        '''
+        directions = [(1,1), (1,-1),(1,0),(0,1)] # directions to explore
+        explored = np.zeros([4, *self.board_size]) # explored nodes in each direction
+        counts = np.zeros([4,self.streak_length]) # couts of streaks of length 1, 2, 3 and 4 in each direction
+        for i in range(self.board_size[0]): # go through all the board
+            for j in range(self.board_size[1]):
+                if board[i][j] == c: # if the color is the same as the color we are looking for
+                    for direction in range(4): # look for streaks in all the directions
+                        if explored[direction][i][j] == 0: # if we haven't explored this direction through this node yet
+                            explored[direction][i][j] = 1 # mark as explored and start exploring the direction
+                        else: 
+                            continue
+                        for k in range(1, self.streak_length+1): # look for streaks of full length
+                            # check if we are still in the board and if the color is the same
+                            if (i + k * directions[direction][0] >= 0 and i + k * directions[direction][0] < self.board_size[0] and j + k * directions[direction][1] >= 0 and j + k * directions[direction][1] < self.board_size[1]):
+                                if (board[i + k * directions[direction][0]][j + k * directions[direction][1]] == c ):
+                                    # conditions satisfied, mark as explored
+                                    explored[direction][i + k * directions[direction][0]][j + k * directions[direction][1]] = 1
+                                else:
+                                    break
+                            else:
+                                break
 
-    def checkForStreak(self, state, color, streak):
-        count = 0
-        for i in range(6):
-            for j in range(7):
-                if state[i][j] == color:
-                    count += self.verticalStreak(i, j, state, streak)
-                    count += self.horizontalStreak(i, j, state, streak)
-                    count += self.diagonalCheck(i, j, state, streak)
-        return count
+                        counts[direction][k-1] += 1 # add the found streak to the counter
+        return counts[:,1:]
 
-    def verticalStreak(self, row, column, state, streak):
-        consecutiveCount = 0
-        for i in range(row, 6):
-            if state[i, column] == state[row, column]:
-                consecutiveCount += 1
-            else:
-                break
-        if consecutiveCount >= streak:
-            return 1
-        else:
-            return 0
-
-    def horizontalStreak(self, row, column, state, streak):
-        count = 0
-        for j in range(column, 7):
-            if state[row, j] == state[row, column]:
-                count += 1
-            else:
-                break
-        if count >= streak:
-            return 1
-        else:
-            return 0
-
-    def diagonalCheck(self, row, column, state, streak):
-        total = 0
-        count = 0
-        j = column
-        for i in range(row, 6):
-            if j > 6:
-                break
-            elif state[i, j] == state[row, column]:
-                count += 1
-            else:
-                break
-            j += 1
-        if count >= streak:
-            total += 1
-        count = 0
-        j = column
-        for i in range(row, -1, -1):
-            if j > 6:
-                break
-            elif state[i,j] == state[row, column]:
-                count += 1
-            else:
-                break
-            j += 1
-        if count >= streak:
-            total += 1
-        return total
