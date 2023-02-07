@@ -2,35 +2,35 @@ import copy
 import time
 import numpy as np
 
-MAXTIME = 4.7 #time limit in seconds
+MAXTIME = 400000.7 #time limit in seconds
 
 class ABPlayer():
     '''alpha-beta pruning game player'''
-    def __init__(self, my_color, opponent_color, board_size, it_deep=False):
+    def __init__(self, my_color, opponent_color, board_size=(6,7),streak_length=4, it_deep=False):
         # game attributes
         self.my_color = my_color
         self.opponent_color = opponent_color
         self.board_size = board_size
-
+        self.streak_length = streak_length
         # a-b pruning attributes
         self.it_deep = it_deep
-        self.depth = 0               # holds current depth in search tree
-        self.maxdepth = 4           # holds max depth in search tree from iterative deepening
+        self.depth = 0 # holds current depth in search tree
+        self.maxdepth = 3 # holds max depth in search tree from iterative deepening
     
     def reset_atts(self):
         self.depth = 0
-        self.maxdepth = 4
+        self.maxdepth = 3
 
     def move(self,board):
         self.time = time.time() # starting time
-        a = -float('Inf')       # alpha
-        b =  float('Inf')       # beta
+        a = -float('Inf') # alpha
+        b =  float('Inf') # beta
         
         maxsearched = (0,0) # best move found so far in ITD
         itd = True
         while itd:
             self.maxdepth += 1
-            best_next = (-float('Inf'),(0,0))   #(best_successor_value, best_successor) # best successor found so far in current ITD round
+            best_next = (-float('Inf'),(0,0)) #(best_successor_value, best_successor) # best successor found so far in current ITD round
 
             for move in self.get_all_valid_moves(board, self.my_color):
                 board_changed = self.get_board_copy(board)
@@ -56,10 +56,10 @@ class ABPlayer():
         Min-part of alpha-beta pruning.
         Returns the lowest-valued successor.
         '''
-        if (time.time() - self.time) > MAXTIME:                                     #max time reached
+        if (time.time() - self.time) > MAXTIME: # max time reached
             return -float('Inf')                               
     
-        self.depth += 1                                                         #proceeded to next layer        
+        self.depth += 1  # proceeded to next layer        
         moves = self.get_all_valid_moves(board,self.opponent_color)
         
         score = self.get_score(board)
@@ -81,9 +81,9 @@ class ABPlayer():
             node_value = min(node_value, returned_value)
             if node_value <= a:  
                 self.depth -= 1
-                return node_value                                       #no need to check other successors
+                return node_value # no need to check other successors
             b = min(b, node_value)
-        self.depth -= 1                                                 #exitting this layer
+        self.depth -= 1 # exitting this layer
         return node_value
         
     def maxvalue(self, board, a, b):
@@ -91,13 +91,13 @@ class ABPlayer():
         Maxpart of alpha-beta pruning.
         Returns the highest-valued successor.
         '''
-        if (time.time() - self.time) > MAXTIME:                         #max time reached
+        if (time.time() - self.time) > MAXTIME: # max time reached
             return -float('Inf')
             
-        self.depth += 1                                                 #proceeded to next layer        
+        self.depth += 1 # proceeded to next layer        
         moves = self.get_all_valid_moves(board, self.my_color)
-        
-        if (moves == None) or (self.depth == self.maxdepth):
+        score = self.get_score(board)
+        if (moves == None) or (self.depth == self.maxdepth) or (abs(score) > 1000):
             self.depth -= 1
             return self.get_score(board)
             
@@ -157,9 +157,12 @@ class ABPlayer():
                 break;
 
     def find_connected(self, board, c):
+        ''' 
+            Returns 3x4 matrix of counts of streaks of length 2, 3 and 4 in each direction.
+        '''
         directions = [(1,1), (1,-1),(1,0),(0,1)] # directions to explore
         explored = np.zeros([4, *self.board_size]) # explored nodes in each direction
-        counts = np.zeros([4,4]) # couts of streaks of length 2, 3 and 4 in each direction
+        counts = np.zeros([4,4]) # couts of streaks of length 1, 2, 3 and 4 in each direction
         for i in range(self.board_size[0]): # go through all the board
             for j in range(self.board_size[1]):
                 if board[i][j] == c: # if the color is the same as the color we are looking for
