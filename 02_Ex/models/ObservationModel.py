@@ -83,3 +83,7 @@ class ObservationModel:
         plt.matshow(self.__vectors)
         plt.colorbar()
         plt.show()
+
+    # get probabilities for readings for a given state
+    def get_o_reading_for_state(self, i: int) -> np.array(1):
+        return self.__vectors[:, i]

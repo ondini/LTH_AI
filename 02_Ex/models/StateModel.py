@@ -45,7 +45,10 @@ class StateModel:
 
         return x, y
 
-    def reading_to_position(self, r: int) -> (int, int):
+    def reading_to_position(self, r) -> (int, int):
+        if r == None:
+            return None
+            
         x = r // self.__cols
         y = r % self.__cols
 

@@ -62,14 +62,13 @@ class Localizer:
     # (re-)initialise for a new run without change of size
     def initialise(self):
         self.__trueState = random.randint(0, self.__sm.get_num_of_states() - 1)
+        print("Inint state ", self.__sm.state_to_pose(self.__trueState))
         self.__sense = None
         self.__fVec = np.ones(self.__sm.get_num_of_states()) / (self.__sm.get_num_of_states())
         self.__estimate = self.__sm.state_to_position(np.argmax(self.__fVec))
     
-    # add your simulator and filter here, for example    
-        
-        #self.__rs = RobotSimAndFilter.RobotSim( ...)
-        #self.__HMM = RobotSimAndFilter.HMMFilter( ...)
+        self.__rs = RobotSimAndFilter.RobotSim(self.__sm, self.__tm, self.__om)
+        self.__HMM = RobotSimAndFilter.HMMFilter(self.__sm, self.__tm, self.__om)
     #
     #  Implement the update cycle:
     #  - robot moves one step, generates new state / pose
@@ -93,7 +92,11 @@ class Localizer:
     def update(self) -> (bool, int, int, int, int, int, int, int, int, np.array(1)) :
         # update all the values to something sensible instead of just reading the old values...
         # 
-        
+
+        # move one step from __trueState, generate new __trueState
+        self.__trueState, self.__sense = self.__rs.step(self.__trueState)
+
+    
         
         # this block can be kept as is
         ret = False  # in case the sensor reading is "nothing" this is kept...
@@ -103,12 +106,21 @@ class Localizer:
         if self.__sense != None:
             srX, srY = self.__sm.reading_to_position(self.__sense)
             ret = True
-            
-        eX, eY = self.__estimate
+        
+        # update the probability distribution
+        self.__estimate = np.argmax(self.__HMM.update(self.__sense))
+        eX, eY = self.__sm.state_to_position(self.__estimate)
+        print("Estimate ", self.__sm.state_to_pose(self.__estimate))
         
         # this should be updated to spit out the actual error for this step
-        error = 10.0                
+        error = self.ManhattanDistance(self.__trueState, self.__estimate)    
         
         # if you use the visualisation (dashboard), this return statement needs to be kept the same
         # or the visualisation needs to be adapted (your own risk!)
         return ret, tsX, tsY, tsH, srX, srY, eX, eY, error, self.__fVec
+
+
+    def ManhattanDistance(self, trueState, estimate):
+        truePosition = self.__sm.state_to_position(trueState)
+        estimatedPosition = self.__sm.state_to_position(estimate)
+        return abs(truePosition[0] - estimatedPosition[0]) + abs(truePosition[1] - estimatedPosition[1])
