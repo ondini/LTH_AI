@@ -17,12 +17,14 @@ from models import StateModel,TransitionModel,ObservationModel,RobotSimAndFilter
 
 
 class Localizer:
-    def __init__(self, sm):
+    def __init__(self, sm, version = 0, eval_type=0):
 
         self.__sm = sm
 
         self.__tm = TransitionModel(self.__sm)
         self.__om = ObservationModel(self.__sm)
+        self.version = version  # version for evaluation purposes: 0 = full, 1 = no observation matrix, 2 = no transition matrix
+        self.eval_type = eval_type # 0 = no evaluation, 1 = evaluation for one max prob., 2 = evaluation for some over all states corresponding to one cell
 
         # change in initialise in case you want to start out with something else
         # initialise can also be called again, if the filtering is to be reinitialised without a change in grid size
@@ -69,6 +71,7 @@ class Localizer:
     
         self.__rs = RobotSimAndFilter.RobotSim(self.__sm, self.__tm, self.__om)
         self.__HMM = RobotSimAndFilter.HMMFilter(self.__sm, self.__tm, self.__om)
+        
     #
     #  Implement the update cycle:
     #  - robot moves one step, generates new state / pose
@@ -108,7 +111,7 @@ class Localizer:
             ret = True
         
         # update the probability distribution
-        self.__estimate = np.argmax(self.__HMM.update(self.__sense))
+        self.__estimate = np.argmax(self.__HMM.update(self.__sense, self.version))
         eX, eY = self.__sm.state_to_position(self.__estimate)
         print("Estimate ", self.__sm.state_to_pose(self.__estimate))
         

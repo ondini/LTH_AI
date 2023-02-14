@@ -36,8 +36,15 @@ class HMMFilter:
         self.__om = om # observation model
         self.__beliefs = np.ones(self.__sm.get_num_of_states()) / (self.__sm.get_num_of_states())
     
-    def update(self, reading):
-        self.__beliefs = self.__om.get_o_reading(reading) @ self.__tm.get_T_transp() @ self.__beliefs
+    def update(self, reading, version):
+        if version == 0:
+            self.__beliefs = self.__om.get_o_reading(reading) @ self.__tm.get_T_transp() @ self.__beliefs
+        if version == 1: 
+            self.__beliefs = self.__tm.get_T_transp() @ self.__beliefs
+        if version == 2: 
+            self.__beliefs = self.__om.get_o_reading(reading) @ self.__beliefs
+
+    
         self.__beliefs = self.__beliefs / np.sum(self.__beliefs)
         
         return self.__beliefs
