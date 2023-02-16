@@ -87,3 +87,7 @@ class ObservationModel:
     # get probabilities for readings for a given state
     def get_o_reading_for_state(self, i: int) -> np.array(1):
         return self.__vectors[:, i]
+
+    def get_o_reading_state_probs(self, reading: int) -> np.array(2):
+        if (reading == None): reading = self.__num_readings - 1
+        return self.__vectors[reading, :]

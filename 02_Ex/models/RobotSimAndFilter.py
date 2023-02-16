@@ -28,7 +28,6 @@ class RobotSim:
         print("RobotSim: current_state = ", self.__sm.state_to_pose(current_state) ," next_state = ", self.__sm.state_to_pose(next_state), "sense = ", self.__sm.reading_to_position(sense))
         return next_state, sense
         
-
 class HMMFilter:
     def __init__(self, sm, tm, om):
         self.__sm = sm # state model
@@ -37,12 +36,16 @@ class HMMFilter:
         self.__beliefs = np.ones(self.__sm.get_num_of_states()) / (self.__sm.get_num_of_states())
     
     def update(self, reading, version):
-        if version == 0:
+        if version == 0: # full filtering
             self.__beliefs = self.__om.get_o_reading(reading) @ self.__tm.get_T_transp() @ self.__beliefs
-        if version == 1: 
+        if version == 1: # no observation matrix
             self.__beliefs = self.__tm.get_T_transp() @ self.__beliefs
-        if version == 2: 
-            self.__beliefs = self.__om.get_o_reading(reading) @ self.__beliefs
+        if version == 2: # no transition matrix
+            self.__beliefs = self.__om.get_o_reading_state_probs(reading)
+        if version == 3: # pure guessing
+            self.__beliefs = np.zeros(self.__sm.get_num_of_states())
+            state = random.randint(0, self.__sm.get_num_of_states() - 1)
+            self.__beliefs[state] = 1
 
     
         self.__beliefs = self.__beliefs / np.sum(self.__beliefs)

@@ -17,14 +17,14 @@ from models import StateModel,TransitionModel,ObservationModel,RobotSimAndFilter
 
 
 class Localizer:
-    def __init__(self, sm, version = 0, eval_type=0):
+    def __init__(self, sm, version = 0):
 
         self.__sm = sm
 
         self.__tm = TransitionModel(self.__sm)
         self.__om = ObservationModel(self.__sm)
         self.version = version  # version for evaluation purposes: 0 = full, 1 = no observation matrix, 2 = no transition matrix
-        self.eval_type = eval_type # 0 = no evaluation, 1 = evaluation for one max prob., 2 = evaluation for some over all states corresponding to one cell
+        # self.eval_type = eval_type # 0 = evaluation for one max prob., 1 = evaluation for sum over all states corresponding to one cell
 
         # change in initialise in case you want to start out with something else
         # initialise can also be called again, if the filtering is to be reinitialised without a change in grid size
@@ -98,8 +98,6 @@ class Localizer:
 
         # move one step from __trueState, generate new __trueState
         self.__trueState, self.__sense = self.__rs.step(self.__trueState)
-
-    
         
         # this block can be kept as is
         ret = False  # in case the sensor reading is "nothing" this is kept...
