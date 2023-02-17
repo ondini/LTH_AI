@@ -16,7 +16,7 @@ class RobotSim:
         # get probabilities for successor states
         pT = T[current_state, :]
         # sample a successor state
-        next_state = np.random.choice(self.__sm.get_num_of_states(), p=pT) 
+        next_state = np.random.choice(self.__sm.get_num_of_states(), p=pT) # sample with right probabilities
 
         # get the observation probability vector
         pO = self.__om.get_o_reading_for_state(next_state)
@@ -25,7 +25,7 @@ class RobotSim:
         if sense == self.__om.get_nr_of_readings() - 1:
             sense = None
 
-        print("RobotSim: current_state = ", self.__sm.state_to_pose(current_state) ," next_state = ", self.__sm.state_to_pose(next_state), "sense = ", self.__sm.reading_to_position(sense))
+        # print("RobotSim: current_state = ", self.__sm.state_to_pose(current_state) ," next_state = ", self.__sm.state_to_pose(next_state), "sense = ", self.__sm.reading_to_position(sense))
         return next_state, sense
         
 class HMMFilter:
