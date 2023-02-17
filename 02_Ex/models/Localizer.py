@@ -64,7 +64,6 @@ class Localizer:
     # (re-)initialise for a new run without change of size
     def initialise(self):
         self.__trueState = random.randint(0, self.__sm.get_num_of_states() - 1)
-        print("Inint state ", self.__sm.state_to_pose(self.__trueState))
         self.__sense = None
         self.__fVec = np.ones(self.__sm.get_num_of_states()) / (self.__sm.get_num_of_states())
         self.__estimate = self.__sm.state_to_position(np.argmax(self.__fVec))
@@ -111,7 +110,6 @@ class Localizer:
         # update the probability distribution
         self.__estimate = np.argmax(self.__HMM.update(self.__sense, self.version))
         eX, eY = self.__sm.state_to_position(self.__estimate)
-        print("Estimate ", self.__sm.state_to_pose(self.__estimate))
         
         # this should be updated to spit out the actual error for this step
         error = self.ManhattanDistance(self.__trueState, self.__estimate)    
